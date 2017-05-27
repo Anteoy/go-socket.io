@@ -24,14 +24,29 @@
       var socket = io();
       // socket.emit('msg', 'hello');
       var s2 = io("/chat");
+      //提供给服务端调用的事件 等效于服务端的event
       socket.on('reply', function(msg){
+        //msg 加入主面板
+        $('#messages').append($('<li>').text(msg));
+      });
+      //提供给服务端调用的事件 等效于服务端的event
+      socket.on('reply2', function(msg){
+        //msg 加入主面板
         $('#messages').append($('<li>').text(msg));
       });
       $('form').submit(function(){
+
+        //触发 return "recv " + msg 
         s2.emit('msg', $('#m').val(), function(data){
           $('#messages').append($('<li>').text('ACK CALLBACK: ' + data));
         });
+        //触发 notice 回调上面的 提供给服务端调用的事件部分
         socket.emit('notice', $('#m').val());
+        //wc ribenren
+        socket.emit("ribenren",$('#m').val(),function(data){
+          $('#messages').append($('<li>').text('ACK CALLBACK: ' + data));
+        });
+        //重置输入框
         $('#m').val('');
         return false;
       });

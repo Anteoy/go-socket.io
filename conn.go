@@ -30,6 +30,7 @@ type Conn interface {
 	SetContext(v interface{})
 	Namespace() string
 	Emit(msg string, v ...interface{})
+	Join(roomNam string) error
 }
 
 type errorMessage struct {
@@ -50,7 +51,7 @@ type conn struct {
 	writeChan  chan writePacket
 	quitChan   chan struct{}
 	handlers   map[string]*namespaceHandler
-	namespaces map[string]*namespaceConn
+	namespaces map[string]*NamespaceConn
 	closeOnce  sync.Once
 	id         uint64
 }
@@ -64,7 +65,7 @@ func newConn(c engineio.Conn, handlers map[string]*namespaceHandler) (*conn, err
 		writeChan:  make(chan writePacket),
 		quitChan:   make(chan struct{}),
 		handlers:   handlers,
-		namespaces: make(map[string]*namespaceConn),
+		namespaces: make(map[string]*NamespaceConn),
 	}
 	if err := ret.connect(); err != nil {
 		ret.Close()
@@ -76,6 +77,8 @@ func newConn(c engineio.Conn, handlers map[string]*namespaceHandler) (*conn, err
 	return ret, nil
 }
 
+func (c *conn) Emit(msg string, v ...interface{}) {}
+
 func (c *conn) Close() error {
 	var err error
 	c.closeOnce.Do(func() {
@@ -83,6 +86,9 @@ func (c *conn) Close() error {
 		close(c.quitChan)
 	})
 	return err
+}
+func (c *conn) Join(roomName string) error {
+	return nil
 }
 
 func (c *conn) connect() error {

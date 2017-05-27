@@ -87,34 +87,44 @@ func (h *namespaceHandler) dispatch(c Conn, header parser.Header, event string, 
 	return nil, errors.New("invalid packet type")
 }
 
-type namespaceConn struct {
+type NamespaceConn struct {
 	*conn
 	namespace string
 	acks      map[uint64]*funcHandler
 	context   interface{}
 }
 
-func newNamespaceConn(conn *conn, namespace string) *namespaceConn {
-	return &namespaceConn{
+func newNamespaceConn(conn *conn, namespace string) *NamespaceConn {
+	return &NamespaceConn{
 		conn:      conn,
 		namespace: namespace,
 		acks:      make(map[uint64]*funcHandler),
 	}
 }
 
-func (c *namespaceConn) SetContext(v interface{}) {
+func (c *NamespaceConn) SetContext(v interface{}) {
 	c.context = v
 }
 
-func (c *namespaceConn) Context() interface{} {
+func (c *NamespaceConn) Context() interface{} {
 	return c.context
 }
 
-func (c *namespaceConn) Namespace() string {
+func (c *NamespaceConn) Namespace() string {
 	return c.namespace
 }
 
-func (c *namespaceConn) Emit(event string, v ...interface{}) {
+func (c *NamespaceConn) Join(roomName string) error {
+	rooms := Roomsmap[roomName]
+	if rooms == nil {
+		rooms = make([]*NamespaceConn, 0)
+	}
+	rooms = append(rooms, c)
+	Roomsmap[roomName] = rooms
+	return nil
+}
+
+func (c *NamespaceConn) Emit(event string, v ...interface{}) {
 	header := parser.Header{
 		Type: parser.Event,
 	}
@@ -141,7 +151,7 @@ func (c *namespaceConn) Emit(event string, v ...interface{}) {
 	c.conn.write(header, args)
 }
 
-func (c *namespaceConn) dispatch(header parser.Header) {
+func (c *NamespaceConn) dispatch(header parser.Header) {
 	if header.Type != parser.Ack {
 		return
 	}

@@ -16,6 +16,7 @@ func main() {
 	server.OnConnect("/", func(s socketio.Conn) error {
 		s.SetContext("")
 		fmt.Println("connected:", s.ID())
+		s.Join("test")
 		return nil
 	})
 	server.OnEvent("/", "notice", func(s socketio.Conn, msg string) {
@@ -38,6 +39,20 @@ func main() {
 	server.OnDisconnect("/", func(s socketio.Conn, msg string) {
 		fmt.Println("closed", msg)
 	})
+
+	server.OnEvent("/", "ribenren", func(s socketio.Conn, msg string) string {
+		log.Printf("消息为：%s", msg)
+		//遍历所有conn
+		for _, v := range socketio.Roomsmap {
+			fmt.Printf("长度：%d", len(v))
+			for _, vv := range v {
+				vv.Emit("reply2", "have2 "+msg)
+			}
+		}
+		// s.Emit("reply2", "have2 "+msg)
+		return "wc ribenren" + msg
+	})
+
 	go server.Serve()
 	defer server.Close()
 
